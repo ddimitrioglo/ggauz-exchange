@@ -1,7 +1,7 @@
 === Plugin Name ===
 Contributors: m.ggauz
 Donate link:
-Tags: exchange rate, currency, informer
+Tags: exchange rate, currency, informer, Moldova
 Requires at least: 3.0.1
 Tested up to: 4.2.4
 Stable tag: 1.0
