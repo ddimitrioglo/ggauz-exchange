@@ -1,0 +1,4 @@
+.mge input:focus,
+.mge select:focus {
+     outline: none;
+}
