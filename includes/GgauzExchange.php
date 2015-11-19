@@ -5,7 +5,9 @@
  */
 class GgauzExchange
 {
+    const DB_VERSION = '1.3';
     const TABLE_NAME = 'mge_exchange';
+    const BNM_XML_URL = 'http://www.bnm.md/en/official_exchange_rates?get_xml=1&date=';
 
     /**
      * Constructor
@@ -63,6 +65,15 @@ class GgauzExchange
     }
 
     /**
+     * Get Plugin's table version
+     * @return string
+     */
+    public function getDbVersion()
+    {
+        return self::DB_VERSION;
+    }
+
+    /**
      * Convert DateTime to the right format
      * @param $date DateTime
      * @return mixed
@@ -94,6 +105,7 @@ class GgauzExchange
     }
 
     /**
+     * Create table SQL query
      * @param $tableName string
      * @return string
      */
@@ -103,13 +115,52 @@ class GgauzExchange
 
         return "CREATE TABLE $tableName (
             id int(10) NOT NULL AUTO_INCREMENT,
-            code INTEGER(3),
-            symb VARCHAR(3),
-            nominal VARCHAR(6),
+            code INTEGER(6),
+            symb VARCHAR(6),
             rate VARCHAR(12),
+            diff VARCHAR(12),
+            date VARCHAR(12),
             created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (id)
         ) $charset ;";
+    }
+
+    /**
+     * Drop table SQL query
+     * @return string
+     */
+    public function getDropTableSqlSchema()
+    {
+        $tableName = $this->getTableName();
+
+        return "DROP TABLE IF EXISTS $tableName ;";
+    }
+
+    /**
+     * Get xml by date and parse data
+     * @param $date string
+     * @return array
+     */
+    public function getXmlDataByDate($date)
+    {
+        $result = array();
+        $url = self::BNM_XML_URL . $date;
+        $get_xml_today = file_get_contents($url, 0);
+        $xml_today = new SimplexmlElement($get_xml_today);
+        $xml_date = (string) $xml_today->attributes()->{'Date'};
+
+        foreach ($xml_today->Valute as $ind => $item) {
+            $codeNumb = (string) trim($item->NumCode);
+            $charCode = (string) trim($item->CharCode);
+            $rate = (float) $item->Value / (float) $item->Nominal;
+
+            $result[$codeNumb]['code'] = $codeNumb;
+            $result[$codeNumb]['symb'] = $charCode;
+            $result[$codeNumb]['rate'] = $rate;
+            $result[$codeNumb]['date'] = $xml_date;
+        }
+
+        return $result;
     }
 
     /**
@@ -145,7 +196,7 @@ class GgauzExchange
         $name = $this->getTableName();
         $currencies = $this->getCurrenciesToShow();
         $list = implode(',', $currencies);
-        $count = count($currencies);
+        $count = count($currencies) * 2;
 
         $sql = "SELECT * FROM $name WHERE code IN ( $list ) ORDER BY created DESC LIMIT $count ";
         $result = $this->db->get_results($sql, ARRAY_A);

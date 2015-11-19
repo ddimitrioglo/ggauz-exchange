@@ -11,6 +11,9 @@ License: MIT
 require_once('includes/GgauzExchange.php');
 require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
+/**
+ * Create plugin's table action
+ */
 function mge_create_table()
 {
     $mge = new GgauzExchange();
@@ -19,37 +22,47 @@ function mge_create_table()
     if ($mge->db->get_var('SHOW TABLES LIKE '. $name) != $name) {
         $sql = $mge->getTableSqlSchema($name);
         dbDelta($sql);
-        add_option('mge_db_version', '1.0');
+
+        add_option('mge_db_version', $mge->getDbVersion());
     }
 }
 register_activation_hook(__FILE__, 'mge_create_table');
 
+/**
+ * Drop old plugin's table if version was changed
+ */
+function mge_update_table()
+{
+    $mge = new GgauzExchange();
+    $installedDbVersion = get_option('mge_db_version');
+
+    if ($installedDbVersion != $mge->getDbVersion()) {
+        $sql = $mge->getDropTableSqlSchema();
+        $mge->db->query($sql);
+        delete_option('mge_db_version');
+        mge_create_table();
+    }
+}
+add_action('plugins_loaded', 'mge_update_table');
+
+/**
+ * Get data and save into the plugin's table
+ */
 function mge_get_data()
 {
     $mge = new GgauzExchange();
     $currentDate = $mge->getCurrentDate();
     $lastUpdateDate = $mge->getLastUpdatedDate();
-    $url = "http://www.bnm.md/ru/official_exchange_rates?get_xml=1&date=". $currentDate;
 
     if ($lastUpdateDate != $currentDate) {
-        $get_xml_today = file_get_contents($url, 0);
-        $xml_today = new SimplexmlElement($get_xml_today);
-        $xml_date = (string) $xml_today->attributes()->{'Date'};
+        $yesterdayDate = $mge->getYesterdayDate();
+        $todayData = $mge->getXmlDataByDate($currentDate);
+        $yesterdayData = $mge->getXmlDataByDate($yesterdayDate);
 
-        if ($xml_date == $currentDate) {
-            foreach ($xml_today->Valute as $ind => $item) {
-                $rates_num = (string) trim($item->NumCode);
-                $rates_char = (string) trim($item->CharCode);
-                $rates_value = (string) trim($item->Value);
-                $rates_nominal = (string) trim($item->Nominal);
-
-                $mge->setXmlData(array(
-                    'code'=>$rates_num,
-                    'symb'=>$rates_char,
-                    'nominal'=>$rates_nominal,
-                    'rate'=>$rates_value
-                ));
-            }
+        foreach($todayData as $key => $value) {
+            $difference = $value['rate'] - $yesterdayData[$key]['rate'];
+            $value['diff'] = round($difference, 4);
+            $mge->setXmlData($value);
         }
     }
 }
@@ -57,12 +70,8 @@ mge_get_data();
 
 
 /**
- * Ajax action
- * for logged in and anonymus users
+ * Ajax action for logged in and anonymus users
  */
-add_action('wp_ajax_chart_data', 'get_chart_data');
-add_action('wp_ajax_nopriv_chart_data', 'get_chart_data');
-
 function get_chart_data()
 {
     $mge = new GgauzExchange();
@@ -71,6 +80,8 @@ function get_chart_data()
 
     wp_die();
 }
+add_action('wp_ajax_chart_data', 'get_chart_data');
+add_action('wp_ajax_nopriv_chart_data', 'get_chart_data');
 
 /**
  * Add stylesheet to the page
@@ -83,7 +94,7 @@ if (!function_exists('ggauz_exchange_css')) {
 add_action('wp_enqueue_scripts', 'ggauz_exchange_css');
 
 /**
- * Add js to the page
+ * Add google jsAPI to the page
  */
 if (!function_exists('google_chart_js')) {
     function google_chart_js() {
@@ -92,6 +103,9 @@ if (!function_exists('google_chart_js')) {
 }
 add_action('wp_enqueue_scripts', 'google_chart_js');
 
+/**
+ * Add plugin js to the page
+ */
 if (!function_exists('ggauz_exchange_js')) {
     function ggauz_exchange_js() {
         wp_enqueue_script('mge_js', plugins_url() .'/'. basename(dirname(__FILE__)) .'/js/mge.js', array('jquery'), null);
