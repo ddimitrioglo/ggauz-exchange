@@ -1,4 +1,10 @@
 .mge input:focus,
 .mge select:focus {
-     outline: none;
+    outline: none;
+}
+.mge .red {
+    color: red;
+}
+.mge .green {
+    color: green;
 }

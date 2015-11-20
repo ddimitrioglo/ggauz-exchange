@@ -170,11 +170,9 @@ class GgauzExchange
     public function getLastUpdatedDate()
     {
         $name = $this->getTableName();
-        $lastRecord = $this->db->get_var("SELECT created FROM $name ORDER BY created DESC LIMIT 1");
+        $lastRecordDate = $this->db->get_var("SELECT date FROM $name ORDER BY created DESC LIMIT 1");
 
-        return ($lastRecord != null)
-            ? $this->getFormattedDate(new DateTime($lastRecord))
-            : $this->getYesterdayDate();
+        return ($lastRecordDate != null) ? $lastRecordDate : $this->getYesterdayDate();
     }
 
     /**
@@ -196,7 +194,7 @@ class GgauzExchange
         $name = $this->getTableName();
         $currencies = $this->getCurrenciesToShow();
         $list = implode(',', $currencies);
-        $count = count($currencies) * 2;
+        $count = count($currencies);
 
         $sql = "SELECT * FROM $name WHERE code IN ( $list ) ORDER BY created DESC LIMIT $count ";
         $result = $this->db->get_results($sql, ARRAY_A);
@@ -211,13 +209,11 @@ class GgauzExchange
      */
     public function getDataSetForChart($currency = null)
     {
-        $currency = !$currency
-            ? $currency = $this->getDefaultChartCurrency()
-            : (int) $currency;
+        $currency = !$currency ? $this->getDefaultChartCurrency() : (int) $currency;
         $name = $this->getTableName();
         $limit = $this->getDaysForChart();
 
-        $sql = "SELECT rate, created FROM $name WHERE code = $currency ORDER BY created DESC LIMIT $limit ";
+        $sql = "SELECT rate, date FROM $name WHERE code = $currency ORDER BY created DESC LIMIT $limit ";
         $result = $this->db->get_results($sql, ARRAY_A);
 
         return json_encode($result);
@@ -225,6 +221,6 @@ class GgauzExchange
 
     public function getClassName()
     {
-        return 'GgauzExchange';
+        return get_class($this);
     }
 }

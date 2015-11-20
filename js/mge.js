@@ -51,12 +51,9 @@ jQuery(function($) {
       min = max;
 
     rates.forEach(function(row) {
-      var date = new Date(row.created),
-        rate = parseFloat(row.rate);
-
-      date.setHours(null);
-      date.setMinutes(null);
-      date.setSeconds(null);
+      var rate = parseFloat(row.rate),
+          parts = row.date.split('.'),
+          date = new Date(parts[2], (parts[1] - 1), parts[0]);
 
       min = min > rate ? rate : min;
       max = max < rate ? rate : max;
