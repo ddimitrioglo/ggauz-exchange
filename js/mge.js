@@ -41,8 +41,6 @@ jQuery(function($) {
     refreshRates($(this));
   });
 
-  refreshRates($defaultCurrency);
-
   function prepareData(ratesData) {
     var ratesArray = ratesData || chartValues,
       rates = JSON.parse(ratesArray),
@@ -98,6 +96,9 @@ jQuery(function($) {
     );
   });
 
-  google.setOnLoadCallback(prepareData());
+  if ($('#mge-chart').length > 0 && 'undefined' != typeof chartValues ) {
+    refreshRates($defaultCurrency);
+    google.setOnLoadCallback(prepareData());
+  }
 
 });
