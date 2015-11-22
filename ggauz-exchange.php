@@ -1,7 +1,7 @@
 <?php
 /*
-Plugin Name: Mit Ggauz Exchange [MGE]
-Plugin URI: http://test.com/
+Plugin Name: MG Exchange [MGE]
+Plugin URI: https://github.com/ddimitrioglo/ggauz-exchange
 Description: Exchange rate informer for Wordpress
 Version: 1.1
 Author: Mit Ggauz
@@ -36,7 +36,7 @@ function mge_update_table()
     $mge = new GgauzExchange();
     $installedDbVersion = get_option('mge_db_version');
 
-    if ($installedDbVersion != $mge->getDbVersion()) {
+    if (isset($installedDbVersion) && $installedDbVersion != $mge->getDbVersion()) {
         $sql = $mge->getDropTableSqlSchema();
         $mge->db->query($sql);
         delete_option('mge_db_version');

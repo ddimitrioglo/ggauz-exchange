@@ -1,6 +1,6 @@
 <?php
 /*
-Template Name: Ggauz Exchange [Template]
+Template Name: MG Exchange [Template]
 */
 
 require_once(ABSPATH . 'wp-content/plugins/ggauz-exchange/includes/GgauzExchange.php');
