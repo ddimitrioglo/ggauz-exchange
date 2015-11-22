@@ -96,7 +96,7 @@ jQuery(function($) {
     );
   });
 
-  if ($('#mge-chart').length > 0 && 'undefined' != typeof chartValues ) {
+  if ($('#mge-chart').length > 0 && 'undefined' != typeof chartValues) {
     refreshRates($defaultCurrency);
     google.setOnLoadCallback(prepareData());
   }
